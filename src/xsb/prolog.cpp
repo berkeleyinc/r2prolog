@@ -68,24 +68,24 @@ bool Session::consult(const std::string & name)
 
 int Session::prolog_log_base(bool newline)
 {
-  //using pharos::prolog::impl::arg;
+  using pharos::prolog::impl::arg;
 
   try {
-    // std::string imp = arg<std::string>(0);
+    std::string imp = arg<std::string>(0);
     // auto level = importance_map.find(to_lower(imp));
     // if (level == importance_map.end()) {
     //   return false;
     // }
     // if (plog[level->second]) {
-    //   try {
-    //     // Assume a string argument
-    //     char const * message = arg<char const *>(1);
-    //     plog[level->second] << message;
-    //   } catch (TypeMismatch &) {
-    //     // Handle non-string arguments
-    //     std::string message = arg<void>(1);
-    //     plog[level->second] << message;
-    //   }
+    try {
+      // Assume a string argument
+      char const * message = arg<char const *>(1);
+      std::cerr << imp << ": " << message << std::endl;
+    } catch (TypeMismatch &) {
+      // Handle non-string arguments
+      std::string message = arg<void>(1);
+      std::cerr << imp << ": " << message << std::endl;
+    }
     //   if (newline) {
     //     plog[level->second] << std::endl;
     //   }

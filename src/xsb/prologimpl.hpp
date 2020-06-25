@@ -920,6 +920,8 @@ class Session : public std::enable_shared_from_this<Session> {
     return rv;
   }
 
+  bool query_string(const char *q, std::string &ans, char sep);
+
   std::size_t print_predicate(
     std::ostream & stream, const std::string & predicate, std::size_t arity)
   {
@@ -970,6 +972,7 @@ class Session : public std::enable_shared_from_this<Session> {
   }
 
   bool run_command(const char *command = nullptr);
+
 
   static constexpr auto wrapper_name = "registry_wrapper";
   std::vector<std::function<int()>> registry;

@@ -59,6 +59,10 @@ class Session {
     }
   }
 
+  bool query_string(const std::string &q, std::string &ans, char sep = '|') {
+    return session->query_string(q.c_str(), ans, sep);
+  }
+
   template <typename... T>
   bool command(T &&... t) {
     return session->command(std::forward<T>(t)...);

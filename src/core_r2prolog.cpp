@@ -1,13 +1,14 @@
+#include "core_r2prolog.h"
+
 #include <errno.h>
 #include <r_cmd.h>
 #include <r_core.h>
 #include <r_io.h>
 #include <r_lib.h>
+#include <r_main.h>
 #include <r_userconf.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "core_r2prolog.h"
 
 #include "prolog.h"
 
@@ -23,6 +24,15 @@ static char *__system(RCore *io, const char *command) {
 }
 
 static void _cmd(RCore *core, const char *input) { r2_cmd(core, input); }
+
+int main(int argc, const char **argv) {
+  auto core = r_core_new();
+  r_core_loadlibs(core, R_CORE_LOADLIBS_ALL, NULL);
+  RCoreFile *fd = r_core_file_open(core, "self://", R_PERM_R, 0);
+  //RCoreFile *fd = r_core_file_open(core, "file:///home/yuri/tt/xm/horcruxes", R_PERM_RX, 0);
+  
+  r_core_prompt_loop(core);
+}
 
 static int r2prolog_init(void *user, const char *input) {
   return r2_init((RCore *)user, input);

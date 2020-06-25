@@ -20,9 +20,6 @@
 
 #define LEND std::endl
 
-// For marking parameters and functions as unused (and supressing the warnings).
-#define UNUSED __attribute__((unused))
-
 namespace pharos {
 
 std::string get_file_contents(const char *filename);

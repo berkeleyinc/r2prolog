@@ -69,6 +69,7 @@ bool        p2p_unify(xsb_term, xsb_term) noexcept;
 status      xsb_command_string(const char *) noexcept;
 status      xsb_command() noexcept;
 status      xsb_query() noexcept;
+  status      xsb_query_string(const char *cmd, std::string &ans, const char *sep) noexcept;
 status      xsb_close_query() noexcept;
 status      xsb_next() noexcept;
 
