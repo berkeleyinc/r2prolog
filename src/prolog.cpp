@@ -60,8 +60,10 @@ void r2_cmd(RCore *core, const char *input) {
   //   return;
   // }
 
-  printf("PPL called from r2prolog!\n");
+  printf("PPL called from r2prolog.\n");
   r_cmd_call(core->rcmd, "aa");
+  r_cmd_call(core->rcmd, "aac");
+  r_cmd_call(core->rcmd, "aar");
   import_r2_data(core);
 
   // for (;;) {
@@ -106,6 +108,137 @@ const char *getRealRef(RCore *core, ut64 off) {
 
   return ref_name;
 }
+
+/*
+ *
+        RListIter *iter;
+        RAnalRef *refi;
+        RList *refs, *xrefs;
+        if (!pj) {
+                return -1;
+        }
+        int ebbs = 0;
+        pj_o (pj);
+        pj_kn (pj, "offset", fcn->addr);
+        char *name = r_core_anal_fcn_name (core, fcn);
+        if (name) {
+                pj_ks (pj, "name", name);
+        }
+        pj_kn (pj, "size", r_anal_function_linear_size (fcn));
+        pj_ks (pj, "is-pure", r_str_bool (r_anal_function_purity (fcn)));
+        pj_kn (pj, "realsz", r_anal_function_realsize (fcn));
+        pj_kb (pj, "noreturn", fcn->is_noreturn);
+        pj_ki (pj, "stackframe", fcn->maxstack);
+        if (fcn->cc) {
+                pj_ks (pj, "calltype", fcn->cc); // calling conventions
+        }
+        pj_ki (pj, "cost", r_anal_function_cost (fcn)); // execution cost
+        pj_ki (pj, "cc", r_anal_function_complexity (fcn)); // cyclic cost
+        pj_ki (pj, "bits", fcn->bits);
+        pj_ks (pj, "type", r_anal_fcntype_tostring (fcn->type));
+        pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
+        pj_ki (pj, "edges", r_anal_function_count_edges (fcn, &ebbs));
+        pj_ki (pj, "ebbs", ebbs);
+        {
+                char *sig = r_core_cmd_strf (core, "afcf @ 0x%"PFMT64x,
+ fcn->addr); if (sig) { r_str_trim (sig); pj_ks (pj, "signature", sig); free
+ (sig);
+                }
+
+        }
+        pj_kn (pj, "minbound", r_anal_function_min_addr (fcn));
+        pj_kn (pj, "maxbound", r_anal_function_max_addr (fcn));
+
+        int outdegree = 0;
+        refs = r_anal_function_get_refs (fcn);
+        if (!r_list_empty (refs)) {
+                pj_k (pj, "callrefs");
+                pj_a (pj);
+                r_list_foreach (refs, iter, refi) {
+                        if (refi->type == R_ANAL_REF_TYPE_CALL) {
+                                outdegree++;
+                        }
+                        if (refi->type == R_ANAL_REF_TYPE_CODE ||
+                                refi->type == R_ANAL_REF_TYPE_CALL) {
+                                pj_o (pj);
+                                pj_kn (pj, "addr", refi->addr);
+                                pj_ks (pj, "type", r_anal_xrefs_type_tostring
+ (refi->type)); pj_kn (pj, "at", refi->at); pj_end (pj);
+                        }
+                }
+                pj_end (pj);
+
+                pj_k (pj, "datarefs");
+                pj_a (pj);
+                r_list_foreach (refs, iter, refi) {
+                        if (refi->type == R_ANAL_REF_TYPE_DATA) {
+                                pj_n (pj, refi->addr);
+                        }
+                }
+                pj_end (pj);
+        }
+        r_list_free (refs);
+
+        int indegree = 0;
+        xrefs = r_anal_function_get_xrefs (fcn);
+        if (!r_list_empty (xrefs)) {
+                pj_k (pj, "codexrefs");
+                pj_a (pj);
+                r_list_foreach (xrefs, iter, refi) {
+                        if (refi->type == R_ANAL_REF_TYPE_CODE ||
+                                refi->type == R_ANAL_REF_TYPE_CALL) {
+                                indegree++;
+                                pj_o (pj);
+                                pj_kn (pj, "addr", refi->addr);
+                                pj_ks (pj, "type", r_anal_xrefs_type_tostring
+ (refi->type)); pj_kn (pj, "at", refi->at); pj_end (pj);
+                        }
+                }
+
+                pj_end (pj);
+                pj_k (pj, "dataxrefs");
+                pj_a (pj);
+
+                r_list_foreach (xrefs, iter, refi) {
+                        if (refi->type == R_ANAL_REF_TYPE_DATA) {
+                                pj_n (pj, refi->addr);
+                        }
+                }
+                pj_end (pj);
+        }
+        r_list_free (xrefs);
+
+        pj_ki (pj, "indegree", indegree);
+        pj_ki (pj, "outdegree", outdegree);
+
+        if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type ==
+ R_ANAL_FCN_TYPE_SYM) { pj_ki (pj, "nlocals", r_anal_var_count (core->anal, fcn,
+ 'b', 0) + r_anal_var_count (core->anal, fcn, 'r', 0) + r_anal_var_count
+ (core->anal, fcn, 's', 0)); pj_ki (pj, "nargs", r_anal_var_count (core->anal,
+ fcn, 'b', 1) + r_anal_var_count (core->anal, fcn, 'r', 1) + r_anal_var_count
+ (core->anal, fcn, 's', 1));
+
+                pj_k (pj, "bpvars");
+                r_anal_var_list_show (core->anal, fcn, 'b', 'j', pj);
+                pj_k (pj, "spvars");
+                r_anal_var_list_show (core->anal, fcn, 's', 'j', pj);
+                pj_k (pj, "regvars");
+                r_anal_var_list_show (core->anal, fcn, 'r', 'j', pj);
+
+                pj_ks (pj, "difftype", fcn->diff->type ==
+ R_ANAL_DIFF_TYPE_MATCH?"match": fcn->diff->type ==
+ R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new"); if (fcn->diff->addr != -1) { pj_kn
+ (pj, "diffaddr", fcn->diff->addr);
+                }
+                if (fcn->diff->name) {
+                        pj_ks (pj, "diffname", fcn->diff->name);
+                }
+        }
+        pj_end (pj);
+        free (name);
+
+*/
+
 void import_r2_data(RCore *core) {
   printf("%s %d\n", __func__, __LINE__);
   vector<stringstream> vss(5);
@@ -116,6 +249,7 @@ void import_r2_data(RCore *core) {
   auto &ss_fncs_attrs = vss[4];
   r_list_foreach_cpp<RAnalFunction>(core->anal->fcns, [&](RAnalFunction *fn) {
     cout << fn->name << ": ";
+    std::vector<size_t> callby, calls, datarefs;
 
     auto xrefs = r_anal_function_get_xrefs(fn);
     r_list_foreach_cpp<RAnalRef>(xrefs, [&](auto ref) {
@@ -127,8 +261,12 @@ void import_r2_data(RCore *core) {
       // xsb->add_fact("xref", std::string(1, (char)ref->type), fn->addr,
       //               ref->addr, ref->at);
       ss_xrefs << endl
-               << "xref('" << (char)ref->type << "'," << fn->addr << ","
-               << ref->addr << "," << ref->at << ").";
+               << "callby(" << fn->addr << "," << ref->addr << ",'"
+               << (char)ref->type << "'," << ref->at << ").";
+      if (ref->type == R_ANAL_REF_TYPE_CODE ||
+          ref->type == R_ANAL_REF_TYPE_CALL) {
+        callby.emplace_back(ref->addr);
+      }
     });
 
     auto refs = r_anal_function_get_refs(fn);
@@ -137,6 +275,9 @@ void import_r2_data(RCore *core) {
       if (refi->type == R_ANAL_REF_TYPE_CODE ||
           refi->type == R_ANAL_REF_TYPE_CALL) {
         flag = getRealRef(core, refi->addr);
+        calls.emplace_back(refi->addr);
+      } else {
+        datarefs.emplace_back(refi->addr);
       }
       // if (flag) {
       //   cout << "Ref: " << flag << endl;
@@ -147,13 +288,11 @@ void import_r2_data(RCore *core) {
       //                                                  : "code_ref",
       //               fn->addr, refi->addr, refi->at, flag ? flag : "");
       ss_refs << endl
-              << "cref(" << fn->addr << ",'" << (char)refi->type << "',"
-              << refi->addr << "," << refi->at << ",'" << (flag ? flag : "")
-              << "'"
+              << "calls(" << fn->addr << "," << refi->addr << ",'"
+              << (char)refi->type << "'," << refi->at << ",'"
+              << (flag ? flag : "") << "'"
               << ").";
     });
-
-    cout << fn->name << endl;
 
     // _r2.funcs.insert(std::make_pair(fn->addr, fn));
     // _r2.funcsVec.emplace_back(fn);
@@ -161,21 +300,54 @@ void import_r2_data(RCore *core) {
 
     auto varsList = r_anal_var_all_list(core->anal, fn);
     if (varsList) {
+      ss_types << endl << "fargs(" << fn->addr << ",[";
       int argnum = 0;
       r_list_foreach_cpp<RAnalVar>(varsList, [&](RAnalVar *var) {
-        // cout << argnum << ": " <<  type << endl;
-        ss_types << endl
-                 << "farg(" << fn->addr << "," << argnum << ",'"
-                 << (var->type ? var->type : "") << "','"
-                 << (var->name ? var->name : "") << "').";
+        if (argnum > 0)
+          ss_types << ",";
+        ss_types << "arg{type:'" << (var->type ? var->type : "") << "',name:'"
+                 << (var->name ? var->name : "") << "'}";
         argnum++;
       });
+      ss_types << "]).";
     }
 
-    ss_fncs_attrs << endl
-                  << "fattr(" << fn->addr << "," << fn->ninstr << ","
-                  << fn->meta.numcallrefs << "," << fn->meta.numrefs << ").";
-    ss_fncs << endl << "fnc(" << fn->addr << ",'" << fn->name << "').";
+    cout << "ninstr=" << fn->ninstr << endl;
+
+    ss_fncs_attrs << endl;
+    ss_fncs_attrs << "fnc(_{addr:" << fn->addr << ",";
+    ss_fncs_attrs << "size:" << r_anal_function_linear_size(fn);
+    ss_fncs_attrs << ",realsz:" << r_anal_function_realsize(fn);
+    if (fn->name)
+      ss_fncs_attrs << ",name:'" << fn->name << "'";
+    ss_fncs_attrs << ",ninstr:" << fn->ninstr;
+    ss_fncs_attrs << ",nargs:"
+                  << r_anal_var_count(core->anal, fn, 'b', 1) +
+                         r_anal_var_count(core->anal, fn, 'r', 1) +
+                         r_anal_var_count(core->anal, fn, 's', 1);
+
+    int ebbs;
+    ss_fncs_attrs << ",nedges:" << r_anal_function_count_edges(fn, &ebbs);
+    // ss_fncs_attrs << ",ncalls:" << ncalls;
+    // ss_fncs_attrs << ",ncallby:" << ncallby;
+    ss_fncs_attrs << ",calls:[";
+    for_each(calls.begin(), calls.end(),
+             [&ss_fncs_attrs, sep = ' '](auto addr) mutable {
+               ss_fncs_attrs << sep << addr, sep = ',';
+             });
+    ss_fncs_attrs << "],callby:[";
+    for_each(callby.begin(), callby.end(),
+             [&ss_fncs_attrs, sep = ' '](auto addr) mutable {
+               ss_fncs_attrs << sep << addr, sep = ',';
+             });
+    ss_fncs_attrs << "],datarefs:[";
+    for_each(datarefs.begin(), datarefs.end(),
+             [&ss_fncs_attrs, sep = ' '](auto addr) mutable {
+               ss_fncs_attrs << sep << addr, sep = ',';
+             });
+    ss_fncs_attrs << "]";
+    ss_fncs_attrs << "}).";
+    // ss_fncs << endl << "fnc(" << fn->addr << ").";
   });
   ofstream f("facts.pl");
   for_each(vss.begin(), vss.end(), [&f](auto &&ss) { f << ss.str() << endl; });
